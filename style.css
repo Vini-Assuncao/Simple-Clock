@@ -1,0 +1,364 @@
+/* ==========================================================================
+   Variáveis (preenchidas pelo script.js de acordo com as configurações)
+   --bg          cor do fundo da página
+   --ui-card     fundo do painel e dos botões
+   --ui-border   bordas do painel, botões e campos
+   --text        cor dos textos fora do relógio (data, fuso, prova, painel...)
+   --clock-card  cor escolhida para o relógio (fundo do analógico/flip, texto do digital)
+   --clock-fg    contraste dentro do relógio (números, traços, ponteiros, dígitos do flip)
+   --clock-border borda do mostrador
+   --pointer     cor do ponteiro (segundos) e da barra de progresso
+   ========================================================================== */
+:root {
+  --bg: #000000;
+  --ui-card: #151515;
+  --ui-border: #2a2a2a;
+  --text: #ffffff;
+  --clock-card: #ffffff;
+  --clock-fg: #111111;
+  --clock-border: #d9dce3;
+  --pointer: #e53935;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+  overflow-x: hidden;
+}
+
+/* ---------- Barra superior ---------- */
+.toolbar {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  right: max(12px, env(safe-area-inset-right));
+  display: flex;
+  gap: 8px;
+  z-index: 20;
+}
+
+.icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--ui-border);
+  background: var(--ui-card);
+  color: var(--text);
+  font-size: 1.15rem;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: opacity 0.2s, border-color 0.2s;
+}
+.icon-btn:hover { border-color: var(--text); }
+
+/* Em tela cheia: some a engrenagem e o botão de sair fica mais discreto */
+html.is-fs #cfgBtn { display: none; }
+html.is-fs #fsBtn {
+  width: 30px;
+  height: 30px;
+  font-size: 0.8rem;
+  opacity: 0.3;
+  background: transparent;
+  border-color: transparent;
+}
+html.is-fs #fsBtn:hover { opacity: 0.9; }
+
+/* ---------- Palco ---------- */
+.stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(0.5rem, 2vh, 1.25rem);
+  width: 100%;
+  text-align: center;
+}
+
+.date {
+  font-size: clamp(1rem, 3vw, 1.75rem);
+  color: var(--text);
+  text-transform: capitalize;
+}
+
+.tz {
+  font-size: 0.85rem;
+  color: var(--text);
+  letter-spacing: 0.02em;
+}
+
+/* ---------- Relógio digital ---------- */
+.digital {
+  font-size: clamp(3.2rem, 17vw, 13rem);
+  font-weight: 700;
+  line-height: 1;
+  color: var(--clock-card);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.digital small {
+  font-size: 0.3em;
+  margin-left: 0.25em;
+  vertical-align: top;
+  color: inherit;
+}
+
+/* ---------- Relógio flip ---------- */
+.flip-row {
+  --h: clamp(64px, 15vw, 170px);
+  display: flex;
+  align-items: center;
+  gap: clamp(3px, 0.8vw, 8px);
+}
+
+.flip-card {
+  position: relative;
+  width: calc(var(--h) * 0.7);
+  height: var(--h);
+  perspective: 700px;
+}
+
+.flip-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  background: var(--bg);
+  z-index: 3;
+  transform: translateY(-1px);
+}
+
+.half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: var(--clock-card);
+}
+.half.top { top: 0; border-radius: 10px 10px 0 0; }
+.half.bottom { bottom: 0; border-radius: 0 0 10px 10px; }
+
+.half span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--h);
+  line-height: var(--h);
+  text-align: center;
+  font-size: calc(var(--h) * 0.82);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--clock-fg);
+}
+.half.top span { top: 0; }
+.half.bottom span { top: calc(var(--h) * -0.5); }
+
+.flap { z-index: 2; }
+.flap.top { transform-origin: 50% 100%; }
+.flap.bottom { transform-origin: 50% 0%; }
+
+.flip-row .sep {
+  font-size: calc(var(--h) * 0.6);
+  line-height: 1;
+  color: var(--text);
+  padding: 0 2px;
+}
+
+.flip-ampm {
+  margin-top: 0.6rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: 0.1em;
+  min-height: 1em;
+}
+
+/* ---------- Relógio analógico ---------- */
+.analog svg {
+  width: min(80vw, 60vh, 520px);
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.face { fill: var(--clock-card); stroke: var(--clock-border); stroke-width: 2; }
+.tk { stroke: var(--clock-fg); stroke-width: 1.5; }
+.tk.major { stroke: var(--clock-fg); stroke-width: 3; }
+.num { fill: var(--clock-fg); font-size: 12px; font-weight: 600; text-anchor: middle; }
+.hh { stroke: var(--clock-fg); stroke-width: 6; stroke-linecap: round; }
+.hm { stroke: var(--clock-fg); stroke-width: 4; stroke-linecap: round; }
+.hs { stroke: var(--pointer); stroke-width: 1.5; stroke-linecap: round; }
+.pin { fill: var(--pointer); }
+
+/* ---------- Avisos do modo prova ---------- */
+.exam-alert {
+  padding: 0.55em 1.3em;
+  border-radius: 999px;
+  border: 2px solid var(--pointer);
+  background: var(--ui-card);
+  color: var(--text);
+  font-weight: 600;
+  font-size: clamp(1rem, 2.5vw, 1.3rem);
+  animation: pop 0.3s ease;
+}
+@keyframes pop {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+/* ---------- Modo prova ---------- */
+.exam {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  width: min(92vw, 640px);
+  color: var(--text);
+}
+
+.ex-times {
+  display: flex;
+  gap: clamp(16px, 5vw, 48px);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.ex-times div { display: flex; flex-direction: column; }
+.ex-times span {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.ex-times strong {
+  font-size: clamp(1.2rem, 3.5vw, 1.8rem);
+  font-variant-numeric: tabular-nums;
+}
+
+.ex-label { }
+.ex-count {
+  font-size: clamp(1.8rem, 6vw, 3.5rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.ex-msg { font-size: 1.15rem; font-weight: 600; }
+
+.bar {
+  width: min(90vw, 480px);
+  height: 8px;
+  border-radius: 99px;
+  background: var(--ui-border);
+  overflow: hidden;
+}
+.bar i { display: block; height: 100%; background: var(--pointer); }
+
+/* ---------- Painel de configurações ---------- */
+.panel {
+  position: fixed;
+  top: max(64px, calc(env(safe-area-inset-top) + 60px));
+  right: 12px;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100dvh - 90px);
+  overflow-y: auto;
+  background: var(--ui-card);
+  color: var(--text);
+  border: 1px solid var(--ui-border);
+  border-radius: 14px;
+  padding: 16px 18px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  z-index: 30;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.panel h2 { font-size: 1.05rem; margin: 0; }
+.panel h3 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.7;
+  margin: 16px 0 4px;
+}
+.panel h4 {
+  font-size: 0.85rem;
+  margin: 12px 0 2px;
+}
+
+.panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.9rem;
+  margin: 10px 0;
+}
+.panel label.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+
+.panel input,
+.panel select {
+  font: inherit;
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid var(--ui-border);
+  background: var(--bg);
+  color: var(--text);
+  width: 100%;
+}
+.panel input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; }
+.panel input[type="color"] { width: 44px; height: 34px; padding: 2px; flex-shrink: 0; cursor: pointer; }
+.panel select:disabled { opacity: 0.5; }
+.panel hr { border: 0; border-top: 1px solid var(--ui-border); margin: 14px 0; }
+
+.field { display: flex; flex-direction: column; gap: 8px; margin: 10px 0; font-size: 0.9rem; }
+.row { display: flex; gap: 10px; align-items: center; }
+
+/* Botões de cor (swatches) */
+.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
+.sw {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--c);
+  border: 2px solid var(--ui-border);
+  cursor: pointer;
+  padding: 0;
+}
+.sw:hover { transform: scale(1.08); }
+.sw[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--ui-card), 0 0 0 4px var(--text);
+}
+
+#examOpts {
+  padding-left: 10px;
+  border-left: 3px solid var(--pointer);
+  margin-top: 6px;
+}
+.hint { font-size: 0.8rem; opacity: 0.7; margin: 6px 0 0; }
+
+.close-btn {
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-size: 1.3rem;
+  cursor: pointer;
+}

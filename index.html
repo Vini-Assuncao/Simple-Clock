@@ -1,896 +1,126 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-bg="dark" data-clock="light">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Relógio</title>
-<meta name="description" content="Relógio online com fuso horário, modo prova, tela cheia e vários estilos.">
-<style>
-  /* Fundo da página e da interface (menus, botões, painel) */
-  html[data-bg="dark"] {
-    --bg: #0f1117;
-    --ui-card: #1a1d27;
-    --ui-fg: #f5f6fa;
-    --ui-muted: #8a90a2;
-    --ui-border: #2a2e3d;
-    --ui-accent: #4f8cff;
-  }
-  html[data-bg="light"] {
-    --bg: #f4f5f9;
-    --ui-card: #ffffff;
-    --ui-fg: #15171f;
-    --ui-muted: #6b7187;
-    --ui-border: #d9dce6;
-    --ui-accent: #2f6fe4;
-  }
-
-  /* Cores do relógio (dígitos, cartões, ponteiros, modo prova) */
-  html[data-clock="light"] {
-    --fg: #f5f6fa;
-    --card: #1f2330;
-    --muted: #9aa0b2;
-    --accent: #4f8cff;
-    --border: #3a3f52;
-  }
-  html[data-clock="dark"] {
-    --fg: #15171f;
-    --card: #e6e9f2;
-    --muted: #5b6077;
-    --accent: #2f6fe4;
-    --border: #c5c9d8;
-  }
-
-  :root { --bg: #0f1117; --ui-fg: #f5f6fa; }
-
-  * { box-sizing: border-box; }
-  [hidden] { display: none !important; }
-
-  html, body { height: 100%; }
-  body {
-    margin: 0;
-    background: var(--bg);
-    color: var(--ui-fg);
-    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    min-height: 100vh;
-    min-height: 100dvh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
-    overflow-x: hidden;
-  }
-
-  /* Barra superior */
-  .toolbar {
-    position: fixed;
-    top: max(12px, env(safe-area-inset-top));
-    right: max(12px, env(safe-area-inset-right));
-    display: flex;
-    gap: 8px;
-    z-index: 20;
-  }
-  .icon-btn {
-    width: 42px;
-    height: 42px;
-    border-radius: 50%;
-    border: 1px solid var(--ui-border);
-    background: var(--ui-card);
-    color: var(--ui-fg);
-    font-size: 1.15rem;
-    cursor: pointer;
-    display: grid;
-    place-items: center;
-  }
-  .icon-btn:hover { border-color: var(--ui-accent); }
-
-  /* Palco */
-  .stage {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: clamp(0.5rem, 2vh, 1.25rem);
-    width: 100%;
-    text-align: center;
-  }
-  .date {
-    font-size: clamp(1rem, 3vw, 1.75rem);
-    color: var(--muted);
-    text-transform: capitalize;
-  }
-  .tz {
-    font-size: 0.85rem;
-    color: var(--muted);
-    letter-spacing: 0.02em;
-  }
-
-  /* Digital */
-  .digital {
-    font-size: clamp(3.2rem, 17vw, 13rem);
-    font-weight: 700;
-    line-height: 1;
-    color: var(--muted); /* cor escolhida, aplicada somente ao texto */
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-  }
-  .digital small {
-    font-size: 0.3em;
-    margin-left: 0.25em;
-    vertical-align: top;
-    color: inherit;
-  }
-
-  /* Flip */
-  .flip-row {
-    --h: clamp(64px, 15vw, 170px);
-    display: flex;
-    align-items: center;
-    gap: clamp(3px, 0.8vw, 8px);
-  }
-  .flip-card {
-    position: relative;
-    width: calc(var(--h) * 0.7);
-    height: var(--h);
-    perspective: 700px;
-  }
-  .flip-card::after {
-    content: "";
-    position: absolute;
-    left: 0;
-    right: 0;
-    top: 50%;
-    height: 2px;
-    background: var(--bg);
-    z-index: 3;
-    transform: translateY(-1px);
-  }
-  .half {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: 50%;
-    overflow: hidden;
-    background: var(--card);
-  }
-  .half.top { top: 0; border-radius: 10px 10px 0 0; }
-  .half.bottom { bottom: 0; border-radius: 0 0 10px 10px; }
-  .half span {
-    position: absolute;
-    left: 0;
-    right: 0;
-    height: var(--h);
-    line-height: var(--h);
-    text-align: center;
-    font-size: calc(var(--h) * 0.82);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    color: var(--fg);
-  }
-  .half.top span { top: 0; }
-  .half.bottom span { top: calc(var(--h) * -0.5); }
-  .flap { z-index: 2; }
-  .flap.top { transform-origin: 50% 100%; }
-  .flap.bottom { transform-origin: 50% 0%; }
-  .flip-row .sep {
-    font-size: calc(var(--h) * 0.6);
-    line-height: 1;
-    color: var(--muted);
-    padding: 0 2px;
-  }
-  .flip-ampm {
-    margin-top: 0.6rem;
-    font-weight: 600;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    min-height: 1em;
-  }
-
-  /* Analógico */
-  .analog svg {
-    width: min(80vw, 60vh, 520px);
-    height: auto;
-    display: block;
-    margin: 0 auto;
-  }
-  .face { fill: var(--card); stroke: var(--border); stroke-width: 2; }
-  .tk { stroke: var(--fg); stroke-width: 1.5; }
-  .tk.major { stroke: var(--fg); stroke-width: 3; }
-  .num { fill: var(--fg); font-size: 12px; font-weight: 600; text-anchor: middle; }
-  .hh { stroke: var(--fg); stroke-width: 6; stroke-linecap: round; }
-  .hm { stroke: var(--fg); stroke-width: 4; stroke-linecap: round; }
-  .hs { stroke: var(--pointer); stroke-width: 1.5; stroke-linecap: round; }
-  .pin { fill: var(--pointer); }
-
-  /* Modo prova */
-  .exam {
-    margin-top: 0.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.45rem;
-    width: min(92vw, 640px);
-    color: var(--muted);
-  }
-  .ex-times {
-    display: flex;
-    gap: clamp(16px, 5vw, 48px);
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-  .ex-times div { display: flex; flex-direction: column; }
-  .ex-times span {
-    font-size: 0.72rem;
-    text-transform: uppercase;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-  }
-  .ex-times strong {
-    font-size: clamp(1.2rem, 3.5vw, 1.8rem);
-    font-variant-numeric: tabular-nums;
-  }
-  .ex-label { color: var(--muted); }
-  .ex-count {
-    font-size: clamp(1.8rem, 6vw, 3.5rem);
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-  }
-  .ex-msg { font-size: 1.15rem; font-weight: 600; }
-  .bar {
-    width: min(90vw, 480px);
-    height: 8px;
-    border-radius: 99px;
-    background: var(--border);
-    overflow: hidden;
-  }
-  .bar i { display: block; height: 100%; background: var(--accent); }
-
-  /* Painel de configurações */
-  .panel {
-    position: fixed;
-    top: max(64px, calc(env(safe-area-inset-top) + 60px));
-    right: 12px;
-    width: min(360px, calc(100vw - 24px));
-    max-height: calc(100dvh - 90px);
-    overflow-y: auto;
-    background: var(--ui-card);
-    color: var(--ui-fg);
-    border: 1px solid var(--ui-border);
-    border-radius: 14px;
-    padding: 16px 18px;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-    z-index: 30;
-  }
-  .panel-head {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 4px;
-  }
-  .panel h2 { font-size: 1.05rem; margin: 0; }
-  .panel h3 {
-    font-size: 0.75rem;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--ui-muted);
-    margin: 14px 0 0;
-  }
-  .panel label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 0.9rem;
-    margin: 10px 0;
-  }
-  .panel label.check {
-    flex-direction: row;
-    align-items: center;
-    gap: 10px;
-  }
-  .panel input, .panel select {
-    font: inherit;
-    padding: 8px;
-    border-radius: 8px;
-    border: 1px solid var(--ui-border);
-    background: var(--bg);
-    color: var(--ui-fg);
-    width: 100%;
-  }
-  .panel input[type="checkbox"] { width: 18px; height: 18px; flex-shrink: 0; }
-  .panel input[type="color"] { width: 48px; height: 38px; padding: 2px; flex-shrink: 0; cursor: pointer; }
-  .panel .row { display: flex; gap: 8px; align-items: center; }
-  .panel select:disabled { opacity: 0.5; }
-  .panel hr { border: 0; border-top: 1px solid var(--ui-border); margin: 14px 0; }
-  #examOpts { padding-left: 10px; border-left: 3px solid var(--ui-accent); margin-top: 6px; }
-  .hint { font-size: 0.8rem; color: var(--ui-muted); margin: 6px 0 0; }
-  .close-btn { border: 0; background: none; color: var(--ui-muted); font-size: 1.3rem; cursor: pointer; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Relógio</title>
+  <meta name="description" content="Relógio online com fuso horário, modo prova com avisos, tela cheia e vários estilos.">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div class="toolbar">
-  <button id="fsBtn" class="icon-btn" title="Tela cheia" aria-label="Tela cheia">⛶</button>
-  <button id="cfgBtn" class="icon-btn" title="Configurações" aria-label="Configurações" aria-expanded="false">⚙</button>
-</div>
-
-<main class="stage">
-  <div id="dateLine" class="date"></div>
-
-  <div id="digital" class="digital"><span id="digitalTime"></span></div>
-
-  <div id="flip" hidden>
-    <div id="flipRow" class="flip-row"></div>
-    <div id="flipAmpm" class="flip-ampm"></div>
+  <div class="toolbar">
+    <button id="fsBtn" class="icon-btn" title="Tela cheia" aria-label="Tela cheia">⛶</button>
+    <button id="cfgBtn" class="icon-btn" title="Configurações" aria-label="Configurações" aria-expanded="false">⚙</button>
   </div>
 
-  <div id="analog" class="analog" hidden></div>
+  <main class="stage">
+    <div id="dateLine" class="date"></div>
 
-  <div id="tzLabel" class="tz"></div>
+    <div id="digital" class="digital"><span id="digitalTime"></span></div>
 
-  <section id="examBox" class="exam" hidden></section>
-</main>
-
-<aside id="panel" class="panel" hidden>
-  <div class="panel-head">
-    <h2>Configurações</h2>
-    <button id="closeBtn" class="close-btn" aria-label="Fechar">×</button>
-  </div>
-
-  <h3>Aparência</h3>
-  <label>Cor do fundo
-    <select id="bgTheme">
-      <option value="preto">Preto</option>
-      <option value="cinzaEscuro">Cinza escuro</option>
-      <option value="cinzaClaro">Cinza claro</option>
-      <option value="branco">Branco</option>
-    </select>
-  </label>
-  <label>Cor do relógio
-    <select id="clockTheme">
-      <option value="preto">Preto</option>
-      <option value="cinzaEscuro">Cinza escuro</option>
-      <option value="cinzaClaro">Cinza claro</option>
-      <option value="branco">Branco</option>
-    </select>
-  </label>
-  <label>Cor do ponteiro
-    <div class="row">
-      <select id="pointerSel">
-        <option value="#e53935">Vermelho</option>
-        <option value="#2f80ed">Azul</option>
-        <option value="#27ae60">Verde</option>
-        <option value="#f2c94c">Amarelo</option>
-        <option value="#f2994a">Laranja</option>
-        <option value="#ffffff">Branco</option>
-        <option value="#000000">Preto</option>
-        <option value="custom">Personalizada</option>
-      </select>
-      <input type="color" id="pointerColor">
+    <div id="flip" hidden>
+      <div id="flipRow" class="flip-row"></div>
+      <div id="flipAmpm" class="flip-ampm"></div>
     </div>
-  </label>
 
-  <h3>Relógio</h3>
-  <label>Tipo de relógio
-    <select id="clockType">
-      <option value="digital">Digital</option>
-      <option value="flip">Flip</option>
-      <option value="analog">Analógico</option>
-    </select>
-  </label>
-  <label>Formato
-    <select id="fmt">
-      <option value="24">24 horas</option>
-      <option value="12">12 horas</option>
-    </select>
-  </label>
-  <label class="check">
-    <input type="checkbox" id="showDate"> Mostrar data
-  </label>
+    <div id="analog" class="analog" hidden></div>
 
-  <h3>Fuso horário</h3>
-  <label class="check">
-    <input type="checkbox" id="showTz"> Mostrar fuso horário
-  </label>
-  <label class="check">
-    <input type="checkbox" id="tzAuto"> Detectar fuso automaticamente
-  </label>
-  <label>Fuso manual
-    <select id="tzSelect"></select>
-  </label>
+    <div id="tzLabel" class="tz"></div>
 
-  <h3>Modo prova</h3>
-  <label class="check">
-    <input type="checkbox" id="examOn"> Ativar modo prova
-  </label>
-  <div id="examOpts" hidden>
-    <label>Início
-      <input type="datetime-local" id="examStart">
+    <div id="examAlert" class="exam-alert" role="status" aria-live="polite" hidden></div>
+
+    <section id="examBox" class="exam" hidden></section>
+  </main>
+
+  <aside id="panel" class="panel" hidden>
+    <div class="panel-head">
+      <h2>Configurações</h2>
+      <button id="closeBtn" class="close-btn" aria-label="Fechar">×</button>
+    </div>
+
+    <h3>Cores</h3>
+    <div class="field">
+      <span>Cor do fundo</span>
+      <div id="bgSwatches" class="swatches" data-key="bg"></div>
+    </div>
+    <div class="field">
+      <span>Cor do relógio</span>
+      <div id="clockSwatches" class="swatches" data-key="clockTheme"></div>
+    </div>
+    <div class="field">
+      <span>Cor dos textos</span>
+      <div id="textSwatches" class="swatches" data-key="textColor"></div>
+    </div>
+    <div class="field">
+      <span>Cor do ponteiro</span>
+      <div id="pointerSwatches" class="swatches" data-key="pointer"></div>
+      <div class="row">
+        <input type="color" id="pointerColor" aria-label="Cor personalizada do ponteiro">
+        <span>Personalizada</span>
+      </div>
+    </div>
+
+    <h3>Relógio</h3>
+    <label>Tipo de relógio
+      <select id="clockType">
+        <option value="digital">Digital</option>
+        <option value="flip">Flip</option>
+        <option value="analog">Analógico</option>
+      </select>
     </label>
-    <label>Fim
-      <input type="datetime-local" id="examEnd">
+    <label>Formato
+      <select id="fmt">
+        <option value="24">24 horas</option>
+        <option value="12">12 horas</option>
+      </select>
     </label>
     <label class="check">
-      <input type="checkbox" id="showTimes"> Mostrar início e fim abaixo do relógio
+      <input type="checkbox" id="showDate"> Mostrar data
+    </label>
+
+    <h3>Fuso horário</h3>
+    <label class="check">
+      <input type="checkbox" id="showTz"> Mostrar fuso horário
     </label>
     <label class="check">
-      <input type="checkbox" id="showCountdown"> Mostrar contagem regressiva
+      <input type="checkbox" id="tzAuto"> Detectar fuso automaticamente
     </label>
-    <p class="hint">Os horários são interpretados no fuso selecionado.</p>
-  </div>
-</aside>
+    <label>Fuso manual
+      <select id="tzSelect"></select>
+    </label>
 
-<script>
-(() => {
-  const $ = id => document.getElementById(id);
-  const pad = n => String(n).padStart(2, '0');
+    <h3>Modo prova</h3>
+    <label class="check">
+      <input type="checkbox" id="examOn"> Ativar modo prova
+    </label>
+    <div id="examOpts" hidden>
+      <label>Início
+        <input type="datetime-local" id="examStart">
+      </label>
+      <label>Fim
+        <input type="datetime-local" id="examEnd">
+      </label>
+      <label class="check">
+        <input type="checkbox" id="showTimes"> Mostrar início e fim abaixo do relógio
+      </label>
+      <label class="check">
+        <input type="checkbox" id="showCountdown"> Mostrar contagem regressiva
+      </label>
 
-  /* ---------- Estado e persistência ---------- */
-  const STORE_KEY = 'relogio-config-v4';
-  const detectedTz = (() => {
-    try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; }
-    catch (e) { return 'UTC'; }
-  })();
-  const DEFAULTS = {
-    clock: 'digital',
-    bg: 'preto',
-    clockTheme: 'branco',
-    pointer: '#e53935',
-    autoTz: true,
-    showTz: true,
-    tz: detectedTz,
-    hour12: false,
-    showDate: true,
-    exam: { on: false, showTimes: true, showCountdown: true, start: '', end: '' }
-  };
-  let state = JSON.parse(JSON.stringify(DEFAULTS));
-  // Converte configurações antigas: a cor escolhida agora é a cor de fundo do relógio
-  const INV = { preto: 'branco', branco: 'preto', cinzaEscuro: 'cinzaClaro', cinzaClaro: 'cinzaEscuro' };
-  const readSaved = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
-  let saved = readSaved('relogio-config-v4');
-  if (!saved) {
-    saved = readSaved('relogio-config-v3');
-    if (saved) saved.clockTheme = INV[saved.clockTheme] || DEFAULTS.clockTheme;
-  }
-  if (!saved) {
-    saved = readSaved('relogio-config-v2');
-    if (saved) {
-      if (saved.clockTheme === 'light') saved.clockTheme = 'preto';
-      if (saved.clockTheme === 'dark') saved.clockTheme = 'branco';
-    }
-  }
-  if (saved) state = { ...state, ...saved, exam: { ...DEFAULTS.exam, ...(saved.exam || {}) } };
-  if (!state.tz) state.tz = detectedTz;
-  // Migra valores da versão anterior (dark/light) para as novas paletas
-  if (state.bg === 'dark') state.bg = 'preto';
-  if (state.bg === 'light') state.bg = 'branco';
-  if (state.clockTheme === 'light') state.clockTheme = 'preto';
-  if (state.clockTheme === 'dark') state.clockTheme = 'branco';
-  if (!/^#[0-9a-f]{6}$/i.test(state.pointer || '')) state.pointer = DEFAULTS.pointer;
+      <h4>Avisos antes do fim</h4>
+      <label class="check"><input type="checkbox" id="alert60"> Faltam 1 hora</label>
+      <label class="check"><input type="checkbox" id="alert30"> Faltam 30 minutos</label>
+      <label class="check"><input type="checkbox" id="alert15"> Faltam 15 minutos</label>
+      <label class="check"><input type="checkbox" id="alert10"> Faltam 10 minutos</label>
+      <label class="check"><input type="checkbox" id="alert5"> Faltam 5 minutos</label>
+      <label class="check"><input type="checkbox" id="alert1"> Falta 1 minuto</label>
+      <p class="hint">Os avisos aparecem acima do cronômetro e somem após 1 minuto.</p>
 
-  const BG_PALETTES = {
-    preto:       { bg: '#000000', card: '#151515', fg: '#f5f5f5', muted: '#8a8a8a', border: '#2a2a2a' },
-    cinzaEscuro: { bg: '#2b2d33', card: '#363942', fg: '#f5f6fa', muted: '#9da1ad', border: '#454955' },
-    cinzaClaro:  { bg: '#d9dce2', card: '#f2f3f6', fg: '#15171f', muted: '#5b6071', border: '#b8bcc8' },
-    branco:      { bg: '#ffffff', card: '#f5f6f8', fg: '#111111', muted: '#6b6f7a', border: '#d9dce3' }
-  };
-  // card = cor escolhida (fundo do relógio); fg = contraste (números, traços, ponteiros, dígitos)
-  const CLOCK_PALETTES = {
-    preto:       { card: '#000000', fg: '#ffffff', border: '#333333' },
-    cinzaEscuro: { card: '#3a3d47', fg: '#ffffff', border: '#5c606c' },
-    cinzaClaro:  { card: '#d9dce2', fg: '#111111', border: '#b8bcc8' },
-    branco:      { card: '#ffffff', fg: '#111111', border: '#d9dce3' }
-  };
+      <p class="hint">Os horários são interpretados no fuso selecionado.</p>
+    </div>
+  </aside>
 
-  const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} };
-  const effTz = () => (state.autoTz ? detectedTz : state.tz);
-
-  /* ---------- Utilidades de fuso ---------- */
-  const partsFmtCache = {};
-  function getParts(date, tz) {
-    if (!partsFmtCache[tz]) {
-      partsFmtCache[tz] = new Intl.DateTimeFormat('en-US', {
-        timeZone: tz, hourCycle: 'h23',
-        year: 'numeric', month: '2-digit', day: '2-digit',
-        hour: '2-digit', minute: '2-digit', second: '2-digit'
-      });
-    }
-    const o = {};
-    for (const p of partsFmtCache[tz].formatToParts(date)) o[p.type] = p.value;
-    return { y: +o.year, m: +o.month, d: +o.day, h: (+o.hour) % 24, mi: +o.minute, s: +o.second };
-  }
-
-  function getOffset(date, tz) {
-    const p = getParts(date, tz);
-    const asUTC = Date.UTC(p.y, p.m - 1, p.d, p.h, p.mi, p.s);
-    return asUTC - Math.floor(date.getTime() / 1000) * 1000;
-  }
-
-  function zonedToEpoch(y, m, d, h, mi, tz) {
-    const guess = Date.UTC(y, m - 1, d, h, mi);
-    const off1 = getOffset(new Date(guess), tz);
-    let t = guess - off1;
-    const off2 = getOffset(new Date(t), tz);
-    if (off2 !== off1) t = guess - off2;
-    return t;
-  }
-
-  function parseLocal(value, tz) {
-    if (!value || !value.includes('T')) return null;
-    const [d, t] = value.split('T');
-    const [y, m, dd] = d.split('-').map(Number);
-    const [h, mi] = t.split(':').map(Number);
-    if ([y, m, dd, h, mi].some(Number.isNaN)) return null;
-    return zonedToEpoch(y, m, dd, h, mi, tz);
-  }
-
-  function toLocalInput(epoch, tz) {
-    const p = getParts(new Date(epoch), tz);
-    return `${p.y}-${pad(p.m)}-${pad(p.d)}T${pad(p.h)}:${pad(p.mi)}`;
-  }
-
-  // Somente horário (sem data)
-  function fmtTime(epoch, tz) {
-    return new Intl.DateTimeFormat('pt-BR', {
-      timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: state.hour12
-    }).format(new Date(epoch));
-  }
-
-  function fmtDur(ms) {
-    const total = Math.max(0, Math.floor(ms / 1000));
-    const d = Math.floor(total / 86400);
-    const h = Math.floor((total % 86400) / 3600);
-    const m = Math.floor((total % 3600) / 60);
-    const s = total % 60;
-    const hms = `${pad(h)}:${pad(m)}:${pad(s)}`;
-    return d ? `${d}d ${hms}` : hms;
-  }
-
-  /* ---------- Construção dos relógios ---------- */
-  function buildFlip() {
-    const row = $('flipRow');
-    row.innerHTML = '';
-    for (let g = 0; g < 3; g++) {
-      if (g) {
-        const sep = document.createElement('div');
-        sep.className = 'sep';
-        sep.textContent = ':';
-        row.appendChild(sep);
-      }
-      for (let k = 0; k < 2; k++) {
-        const card = document.createElement('div');
-        card.className = 'flip-card';
-        card.innerHTML = '<div class="half top"><span></span></div><div class="half bottom"><span></span></div>';
-        row.appendChild(card);
-      }
-    }
-  }
-  let flipVals = [];
-
-  function makeHalf(pos, ch) {
-    const d = document.createElement('div');
-    d.className = `half ${pos} flap`;
-    const s = document.createElement('span');
-    s.textContent = ch;
-    d.appendChild(s);
-    return d;
-  }
-
-  function flipAnim(card, oldC, newC) {
-    const topS = card.querySelector('.top span');
-    const botS = card.querySelector('.bottom span');
-    const f1 = makeHalf('top', oldC);
-    card.appendChild(f1);
-    f1.animate(
-      [{ transform: 'rotateX(0deg)' }, { transform: 'rotateX(-90deg)' }],
-      { duration: 260, easing: 'ease-in', fill: 'forwards' }
-    ).onfinish = () => {
-      f1.remove();
-      topS.textContent = newC;
-      const f2 = makeHalf('bottom', newC);
-      card.appendChild(f2);
-      f2.animate(
-        [{ transform: 'rotateX(90deg)' }, { transform: 'rotateX(0deg)' }],
-        { duration: 260, easing: 'ease-out', fill: 'forwards' }
-      ).onfinish = () => {
-        f2.remove();
-        botS.textContent = newC;
-      };
-    };
-  }
-
-  function setFlipChars(chars, animate) {
-    const cards = document.querySelectorAll('#flipRow .flip-card');
-    chars.forEach((ch, i) => {
-      const card = cards[i];
-      if (!card) return;
-      const old = flipVals[i];
-      if (old === undefined || !animate) {
-        card.querySelector('.top span').textContent = ch;
-        card.querySelector('.bottom span').textContent = ch;
-      } else if (old !== ch) {
-        flipAnim(card, old, ch);
-      }
-      flipVals[i] = ch;
-    });
-  }
-
-  function buildAnalog() {
-    let ticks = '';
-    for (let i = 0; i < 60; i++) {
-      const len = i % 5 ? 4 : 9;
-      const cls = i % 5 ? 'tk' : 'tk major';
-      ticks += `<line x1="100" y1="12" x2="100" y2="${12 + len}" transform="rotate(${i * 6} 100 100)" class="${cls}"/>`;
-    }
-    let nums = '';
-    for (let n = 1; n <= 12; n++) {
-      const a = n * 30 * Math.PI / 180;
-      const x = 100 + 70 * Math.sin(a);
-      const y = 100 - 70 * Math.cos(a) + 4.5;
-      nums += `<text x="${x.toFixed(2)}" y="${y.toFixed(2)}" class="num">${n}</text>`;
-    }
-    $('analog').innerHTML =
-      `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Relógio analógico">
-        <circle cx="100" cy="100" r="96" class="face"/>
-        ${ticks}${nums}
-        <line id="hH" x1="100" y1="108" x2="100" y2="58" class="hh"/>
-        <line id="hM" x1="100" y1="112" x2="100" y2="34" class="hm"/>
-        <line id="hS" x1="100" y1="122" x2="100" y2="22" class="hs"/>
-        <circle cx="100" cy="100" r="4" class="pin"/>
-      </svg>`;
-  }
-
-  function renderAnalog(p, now) {
-    const sA = (p.s + now.getMilliseconds() / 1000) * 6;
-    const mA = (p.mi + p.s / 60) * 6;
-    const hA = ((p.h % 12) + p.mi / 60) * 30;
-    const hH = $('hH'), hM = $('hM'), hS = $('hS');
-    if (!hH) return;
-    hH.setAttribute('transform', `rotate(${hA} 100 100)`);
-    hM.setAttribute('transform', `rotate(${mA} 100 100)`);
-    hS.setAttribute('transform', `rotate(${sA} 100 100)`);
-  }
-
-  function renderDigital(p) {
-    let h = p.h, suffix = '';
-    if (state.hour12) {
-      suffix = p.h < 12 ? 'AM' : 'PM';
-      h = p.h % 12 || 12;
-    }
-    $('digitalTime').innerHTML =
-      `${state.hour12 ? h : pad(h)}:${pad(p.mi)}:${pad(p.s)}${suffix ? `<small>${suffix}</small>` : ''}`;
-  }
-
-  /* ---------- Informações (data e fuso) ---------- */
-  function updateInfo(now, tz) {
-    const dl = $('dateLine');
-    dl.hidden = !state.showDate;
-    if (state.showDate) {
-      dl.textContent = new Intl.DateTimeFormat('pt-BR', {
-        timeZone: tz, weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
-      }).format(now);
-    }
-    const tzl = $('tzLabel');
-    tzl.hidden = !state.showTz;
-    if (state.showTz) {
-      let off = '';
-      try {
-        off = new Intl.DateTimeFormat('pt-BR', { timeZone: tz, timeZoneName: 'shortOffset' })
-          .formatToParts(now).find(x => x.type === 'timeZoneName')?.value || '';
-      } catch (e) {}
-      tzl.textContent = tz.replace(/_/g, ' ') + (off ? ` · ${off}` : '');
-    }
-  }
-
-  /* ---------- Modo prova ---------- */
-  function renderExam(now, tz) {
-    const box = $('examBox');
-    if (!state.exam.on) { box.hidden = true; return; }
-
-    const S = parseLocal(state.exam.start, tz);
-    const E = parseLocal(state.exam.end, tz);
-    const t = now.getTime();
-    let h = '';
-
-    if (state.exam.showTimes) {
-      h += `<div class="ex-times">
-        <div><span>Início</span><strong>${S != null ? fmtTime(S, tz) : '—'}</strong></div>
-        <div><span>Fim</span><strong>${E != null ? fmtTime(E, tz) : '—'}</strong></div>
-      </div>`;
-    }
-
-    if (state.exam.showCountdown) {
-      if (S == null || E == null || E <= S) {
-        h += `<div class="ex-msg">Defina um início e um fim válidos.</div>`;
-      } else if (t < S) {
-        h += `<div class="ex-label">Começa em</div><div class="ex-count">${fmtDur(S - t)}</div>`;
-        h += `<div class="bar"><i style="width:0%"></i></div>`;
-      } else if (t < E) {
-        const pct = Math.min(100, Math.max(0, (t - S) / (E - S) * 100));
-        h += `<div class="ex-label">Termina em</div><div class="ex-count">${fmtDur(E - t)}</div>`;
-        h += `<div class="bar"><i style="width:${pct.toFixed(2)}%"></i></div>`;
-      } else {
-        h += `<div class="ex-msg">Prova encerrada</div>`;
-        h += `<div class="bar"><i style="width:100%"></i></div>`;
-      }
-    }
-
-    box.hidden = !h;
-    if (h) box.innerHTML = h;
-  }
-
-  function setDefaultExam() {
-    const tz = effTz();
-    const now = Date.now();
-    state.exam.start = toLocalInput(now, tz);
-    state.exam.end = toLocalInput(now + 60 * 60 * 1000, tz);
-  }
-
-  /* ---------- Loop principal ---------- */
-  let lastKey = '';
-  function tick() {
-    const now = new Date();
-    const tz = effTz();
-    const p = getParts(now, tz);
-    const mode = state.clock;
-
-    $('digital').hidden = mode !== 'digital';
-    $('flip').hidden = mode !== 'flip';
-    $('analog').hidden = mode !== 'analog';
-
-    if (mode === 'digital') {
-      renderDigital(p);
-    } else if (mode === 'flip') {
-      const hh = state.hour12 ? (p.h % 12 || 12) : p.h;
-      setFlipChars((pad(hh) + pad(p.mi) + pad(p.s)).split(''), true);
-      $('flipAmpm').textContent = state.hour12 ? (p.h < 12 ? 'AM' : 'PM') : '';
-    } else {
-      renderAnalog(p, now);
-    }
-
-    const key = Math.floor(now.getTime() / 1000) + '|' + tz + '|' + state.showDate + '|' + state.showTz;
-    if (key !== lastKey) { lastKey = key; updateInfo(now, tz); }
-
-    renderExam(now, tz);
-  }
-
-  /* ---------- Configurações ---------- */
-  function fillTz() {
-    let list;
-    try { list = Intl.supportedValuesOf('timeZone').slice(); }
-    catch (e) {
-      list = ['America/Sao_Paulo', 'America/New_York', 'America/Los_Angeles', 'Europe/London',
-              'Europe/Paris', 'Asia/Tokyo', 'Australia/Sydney'];
-    }
-    for (const z of ['UTC', detectedTz, state.tz]) if (!list.includes(z)) list.push(z);
-    list.sort();
-    $('tzSelect').innerHTML = list
-      .map(z => `<option value="${z}">${z.replace(/_/g, ' ')}</option>`).join('');
-  }
-
-  function applyTheme() {
-    const b = BG_PALETTES[state.bg] || BG_PALETTES.preto;
-    const c = CLOCK_PALETTES[state.clockTheme] || CLOCK_PALETTES.preto;
-    const s = document.documentElement.style;
-    s.setProperty('--bg', b.bg);
-    s.setProperty('--ui-card', b.card);
-    s.setProperty('--ui-fg', b.fg);
-    s.setProperty('--ui-muted', b.muted);
-    s.setProperty('--ui-border', b.border);
-    s.setProperty('--fg', c.fg);
-    s.setProperty('--card', c.card);
-    s.setProperty('--muted', c.card); // data, fuso, AM/PM e textos do modo prova seguem a cor escolhida
-    s.setProperty('--border', c.border);
-    s.setProperty('--pointer', state.pointer);
-    s.setProperty('--accent', state.pointer);
-    s.setProperty('--ui-accent', state.pointer);
-  }
-
-  function syncControls() {
-    applyTheme();
-    $('bgTheme').value = state.bg;
-    $('clockTheme').value = state.clockTheme;
-    $('pointerColor').value = state.pointer;
-    const presets = [...$('pointerSel').options].map(o => o.value);
-    $('pointerSel').value = presets.includes(state.pointer) ? state.pointer : 'custom';
-    $('clockType').value = state.clock;
-    $('fmt').value = state.hour12 ? '12' : '24';
-    $('showDate').checked = state.showDate;
-    $('showTz').checked = state.showTz;
-    $('tzAuto').checked = state.autoTz;
-    $('tzSelect').value = state.autoTz ? detectedTz : state.tz;
-    $('tzSelect').disabled = state.autoTz;
-    $('examOn').checked = state.exam.on;
-    $('examOpts').hidden = !state.exam.on;
-    $('examStart').value = state.exam.start;
-    $('examEnd').value = state.exam.end;
-    $('showTimes').checked = state.exam.showTimes;
-    $('showCountdown').checked = state.exam.showCountdown;
-  }
-
-  function readControls() {
-    state.bg = $('bgTheme').value;
-    state.clockTheme = $('clockTheme').value;
-    state.pointer = $('pointerColor').value;
-    state.clock = $('clockType').value;
-    state.hour12 = $('fmt').value === '12';
-    state.showDate = $('showDate').checked;
-    state.showTz = $('showTz').checked;
-    state.autoTz = $('tzAuto').checked;
-    if (!state.autoTz) state.tz = $('tzSelect').value;
-    state.exam.on = $('examOn').checked;
-    state.exam.start = $('examStart').value;
-    state.exam.end = $('examEnd').value;
-    state.exam.showTimes = $('showTimes').checked;
-    state.exam.showCountdown = $('showCountdown').checked;
-  }
-
-  function onChange() {
-    readControls();
-    save();
-    syncControls();
-    lastKey = '';
-    tick();
-  }
-
-  $('examOn').addEventListener('change', () => {
-    readControls();
-    if (state.exam.on && (!state.exam.start || !state.exam.end)) setDefaultExam();
-    save();
-    syncControls();
-    lastKey = '';
-    tick();
-  });
-
-  $('pointerSel').addEventListener('change', () => {
-    const v = $('pointerSel').value;
-    if (v !== 'custom') $('pointerColor').value = v;
-    onChange();
-  });
-
-  ['bgTheme', 'clockTheme', 'pointerColor', 'clockType', 'fmt', 'showDate', 'showTz', 'tzAuto', 'tzSelect',
-   'showTimes', 'showCountdown', 'examStart', 'examEnd']
-    .forEach(id => $(id).addEventListener('change', onChange));
-
-  const panel = $('panel');
-  const cfgBtn = $('cfgBtn');
-  function setPanel(open) {
-    panel.hidden = !open;
-    cfgBtn.setAttribute('aria-expanded', String(open));
-  }
-  cfgBtn.addEventListener('click', () => setPanel(panel.hidden));
-  $('closeBtn').addEventListener('click', () => setPanel(false));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') setPanel(false); });
-
-  /* ---------- Tela cheia ---------- */
-  const root = document.documentElement;
-  const fsBtn = $('fsBtn');
-  const canFS = !!(root.requestFullscreen || root.webkitRequestFullscreen);
-  if (!canFS) fsBtn.hidden = true;
-
-  const isFS = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
-  fsBtn.addEventListener('click', () => {
-    try {
-      if (isFS()) {
-        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
-      } else {
-        (root.requestFullscreen || root.webkitRequestFullscreen).call(root);
-      }
-    } catch (e) {}
-  });
-  const onFsChange = () => {
-    fsBtn.textContent = isFS() ? '✕' : '⛶';
-    fsBtn.title = isFS() ? 'Sair da tela cheia' : 'Tela cheia';
-  };
-  document.addEventListener('fullscreenchange', onFsChange);
-  document.addEventListener('webkitfullscreenchange', onFsChange);
-
-  /* ---------- Inicialização ---------- */
-  buildFlip();
-  buildAnalog();
-  fillTz();
-  syncControls();
-  tick();
-  setInterval(tick, 100);
-})();
-</script>
+  <script src="script.js"></script>
 </body>
 </html>
