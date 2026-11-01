@@ -110,6 +110,9 @@
     font-weight: 700;
     line-height: 1;
     color: var(--fg);
+    background: var(--card);
+    border-radius: 0.15em;
+    padding: 0.1em 0.25em;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
@@ -117,7 +120,7 @@
     font-size: 0.3em;
     margin-left: 0.25em;
     vertical-align: top;
-    color: var(--muted);
+    color: var(--fg);
   }
 
   /* Flip */
@@ -193,7 +196,7 @@
     margin: 0 auto;
   }
   .face { fill: var(--card); stroke: var(--border); stroke-width: 2; }
-  .tk { stroke: var(--muted); stroke-width: 1.5; }
+  .tk { stroke: var(--fg); stroke-width: 1.5; }
   .tk.major { stroke: var(--fg); stroke-width: 3; }
   .num { fill: var(--fg); font-size: 12px; font-weight: 600; text-anchor: middle; }
   .hh { stroke: var(--fg); stroke-width: 6; stroke-linecap: round; }
@@ -209,7 +212,7 @@
     align-items: center;
     gap: 0.45rem;
     width: min(92vw, 640px);
-    color: var(--fg);
+    color: var(--muted);
   }
   .ex-times {
     display: flex;
@@ -424,7 +427,7 @@
   const pad = n => String(n).padStart(2, '0');
 
   /* ---------- Estado e persistência ---------- */
-  const STORE_KEY = 'relogio-config-v2';
+  const STORE_KEY = 'relogio-config-v4';
   const detectedTz = (() => {
     try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; }
     catch (e) { return 'UTC'; }
@@ -432,7 +435,7 @@
   const DEFAULTS = {
     clock: 'digital',
     bg: 'preto',
-    clockTheme: 'preto',
+    clockTheme: 'branco',
     pointer: '#e53935',
     autoTz: true,
     showTz: true,
@@ -442,10 +445,22 @@
     exam: { on: false, showTimes: true, showCountdown: true, start: '', end: '' }
   };
   let state = JSON.parse(JSON.stringify(DEFAULTS));
-  try {
-    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
-    if (saved) state = { ...state, ...saved, exam: { ...DEFAULTS.exam, ...(saved.exam || {}) } };
-  } catch (e) {}
+  // Converte configurações antigas: a cor escolhida agora é a cor de fundo do relógio
+  const INV = { preto: 'branco', branco: 'preto', cinzaEscuro: 'cinzaClaro', cinzaClaro: 'cinzaEscuro' };
+  const readSaved = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } };
+  let saved = readSaved('relogio-config-v4');
+  if (!saved) {
+    saved = readSaved('relogio-config-v3');
+    if (saved) saved.clockTheme = INV[saved.clockTheme] || DEFAULTS.clockTheme;
+  }
+  if (!saved) {
+    saved = readSaved('relogio-config-v2');
+    if (saved) {
+      if (saved.clockTheme === 'light') saved.clockTheme = 'preto';
+      if (saved.clockTheme === 'dark') saved.clockTheme = 'branco';
+    }
+  }
+  if (saved) state = { ...state, ...saved, exam: { ...DEFAULTS.exam, ...(saved.exam || {}) } };
   if (!state.tz) state.tz = detectedTz;
   // Migra valores da versão anterior (dark/light) para as novas paletas
   if (state.bg === 'dark') state.bg = 'preto';
@@ -460,11 +475,12 @@
     cinzaClaro:  { bg: '#d9dce2', card: '#f2f3f6', fg: '#15171f', muted: '#5b6071', border: '#b8bcc8' },
     branco:      { bg: '#ffffff', card: '#f5f6f8', fg: '#111111', muted: '#6b6f7a', border: '#d9dce3' }
   };
+  // card = cor escolhida (fundo do relógio); fg = contraste (números, traços, ponteiros, dígitos)
   const CLOCK_PALETTES = {
-    preto:       { fg: '#ffffff', card: '#1a1a1a', muted: '#9a9a9a', border: '#333333' },
-    cinzaEscuro: { fg: '#f5f6fa', card: '#4a4d57', muted: '#b4b8c4', border: '#5c606c' },
-    cinzaClaro:  { fg: '#1d1f26', card: '#ffffff', muted: '#6b7080', border: '#c0c4cf' },
-    branco:      { fg: '#111111', card: '#e9ebf0', muted: '#6b6f7a', border: '#cdd1db' }
+    preto:       { card: '#000000', fg: '#ffffff', border: '#333333' },
+    cinzaEscuro: { card: '#3a3d47', fg: '#ffffff', border: '#5c606c' },
+    cinzaClaro:  { card: '#d9dce2', fg: '#111111', border: '#b8bcc8' },
+    branco:      { card: '#ffffff', fg: '#111111', border: '#d9dce3' }
   };
 
   const save = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} };
@@ -764,7 +780,7 @@
     s.setProperty('--ui-border', b.border);
     s.setProperty('--fg', c.fg);
     s.setProperty('--card', c.card);
-    s.setProperty('--muted', c.muted);
+    s.setProperty('--muted', c.card); // data, fuso, AM/PM e textos do modo prova seguem a cor escolhida
     s.setProperty('--border', c.border);
     s.setProperty('--pointer', state.pointer);
     s.setProperty('--accent', state.pointer);
