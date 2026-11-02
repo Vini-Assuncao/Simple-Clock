@@ -3,9 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Relógio</title>
-  <meta name="description" content="Relógio online com fuso horário, modo prova com avisos, tela cheia e vários estilos.">
+  <title>SimpleClock</title>
+  <meta name="description" content="SimpleClock: horário, cronômetro, temporizador, modo estudo com pausas, lembretes e modo prova.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="Icon.ico">
 </head>
 <body>
 
@@ -14,113 +18,262 @@
     <button id="cfgBtn" class="icon-btn" title="Configurações" aria-label="Configurações" aria-expanded="false">⚙</button>
   </div>
 
-  <main class="stage">
-    <div id="dateLine" class="date"></div>
+  <div id="examAlert" class="exam-alert" role="status" aria-live="polite" hidden></div>
 
-    <div id="digital" class="digital"><span id="digitalTime"></span></div>
+  <main>
+    <!-- Relógio -->
+    <section id="viewClock" class="view">
+      <div class="clockwrap" data-clock="clock"></div>
+    </section>
 
-    <div id="flip" hidden>
-      <div id="flipRow" class="flip-row"></div>
-      <div id="flipAmpm" class="flip-ampm"></div>
-    </div>
+    <!-- Cronômetro -->
+    <section id="viewStopwatch" class="view" hidden>
+      <h1 class="view-title">Cronômetro</h1>
+      <div class="display" data-display="sw"></div>
+      <ol id="swLaps" class="laps"></ol>
+      <div class="ctrls">
+        <button id="swToggle" class="btn primary">Iniciar</button>
+        <button id="swLap" class="btn">Volta</button>
+        <button id="swReset" class="btn">Zerar</button>
+      </div>
+    </section>
 
-    <div id="analog" class="analog" hidden></div>
+    <!-- Temporizador -->
+    <section id="viewTimer" class="view" hidden>
+      <h1 class="view-title">Temporizador</h1>
+      <div class="display" data-display="tm"></div>
+      <p id="tmInit" class="init-txt"></p>
+      <div id="tmBarWrap" class="bar"><i id="tmBar"></i></div>
+      <div id="tmInputs" class="tm-inputs">
+        <label>h <input type="number" id="tmH" min="0" max="99"></label>
+        <label>min <input type="number" id="tmM" min="0" max="59"></label>
+        <label>s <input type="number" id="tmS" min="0" max="59"></label>
+      </div>
+      <p id="tmMsg" class="ex-msg" hidden>Tempo esgotado!</p>
+      <div class="ctrls">
+        <button id="tmToggle" class="btn primary">Iniciar</button>
+        <button id="tmReset" class="btn">Reiniciar</button>
+      </div>
+    </section>
 
-    <div id="tzLabel" class="tz"></div>
+    <!-- Estudo -->
+    <section id="viewStudy" class="view" hidden>
+      <h1 id="stPhase" class="view-title">Estudo</h1>
+      <p id="stSub" class="hint"></p>
+      <div class="stack">
+        <div class="date" hidden></div>
+        <div class="display" data-display="st"></div>
+      </div>
+      <div class="bar"><i id="stBar"></i></div>
+      <ol id="stList" class="study-list"></ol>
+      <div class="ctrls">
+        <button id="stToggle" class="btn primary">Iniciar</button>
+        <button id="stSkip" class="btn">Pular</button>
+        <button id="stReset" class="btn">Reiniciar</button>
+      </div>
+    </section>
 
-    <div id="examAlert" class="exam-alert" role="status" aria-live="polite" hidden></div>
+    <!-- Modo prova -->
+    <section id="viewExam" class="view" hidden>
+      <h1 class="view-title">Modo prova</h1>
+      <div class="clockwrap" data-clock="exam"></div>
+      <section id="examBox" class="exam"></section>
+    </section>
 
-    <section id="examBox" class="exam" hidden></section>
+    <!-- Lembretes -->
+    <section id="viewRem" class="view" hidden>
+      <h1 class="view-title">Lembretes</h1>
+      <p id="remNext" class="hint"></p>
+      <ul id="remList" class="rem-list"></ul>
+      <div class="rem-form">
+        <input type="time" id="remTime" aria-label="Horário">
+        <input type="text" id="remText" class="grow" placeholder="Texto do lembrete" maxlength="80" aria-label="Texto">
+        <label class="opt inline"><input type="checkbox" id="remDaily"> Todo dia</label>
+        <button id="remAdd" class="btn primary">Adicionar</button>
+      </div>
+    </section>
   </main>
 
+  <!-- Barra de modos (pode ser escondida) -->
+  <nav id="modeBar" class="mode-bar" aria-label="Modos">
+    <button class="mb" data-mode="clock"><span class="mi">🕐</span><span class="ml">Horário</span></button>
+    <button class="mb" data-mode="stopwatch"><span class="mi">⏱</span><span class="ml">Cronômetro</span></button>
+    <button class="mb" data-mode="timer"><span class="mi">⏳</span><span class="ml">Temporizador</span></button>
+    <button class="mb" data-mode="study"><span class="mi">📚</span><span class="ml">Estudo</span></button>
+    <button class="mb" data-mode="exam"><span class="mi">📝</span><span class="ml">Prova</span></button>
+    <button class="mb" data-mode="reminders"><span class="mi">🔔</span><span class="ml">Lembretes</span></button>
+    <button id="modeHide" class="mb mb-hide" title="Esconder menu" aria-label="Esconder menu">✕</button>
+  </nav>
+  <button id="modeShow" class="mode-show" title="Mostrar menu" aria-label="Mostrar menu" hidden>☰</button>
+
+  <!-- Configurações -->
   <aside id="panel" class="panel" hidden>
     <div class="panel-head">
       <h2>Configurações</h2>
       <button id="closeBtn" class="close-btn" aria-label="Fechar">×</button>
     </div>
 
-    <h3>Cores</h3>
-    <div class="field">
-      <span>Cor do fundo</span>
-      <div id="bgSwatches" class="swatches" data-key="bg"></div>
-    </div>
-    <div class="field">
-      <span>Cor do relógio</span>
-      <div id="clockSwatches" class="swatches" data-key="clockTheme"></div>
-    </div>
-    <div class="field">
-      <span>Cor dos textos</span>
-      <div id="textSwatches" class="swatches" data-key="textColor"></div>
-    </div>
-    <div class="field">
-      <span>Cor do ponteiro</span>
-      <div id="pointerSwatches" class="swatches" data-key="pointer"></div>
-      <div class="row">
-        <input type="color" id="pointerColor" aria-label="Cor personalizada do ponteiro">
-        <span>Personalizada</span>
+    <div class="panel-body">
+      <nav class="side">
+        <button class="tab active" data-tab="geral"><span class="ic">🛠</span><span class="tl">Geral</span></button>
+        <button class="tab" data-tab="aparencia"><span class="ic">🎨</span><span class="tl">Aparência</span></button>
+        <button class="tab" data-tab="relogio"><span class="ic">🕐</span><span class="tl">Relógio</span></button>
+        <button class="tab" data-tab="fuso"><span class="ic">🌍</span><span class="tl">Fuso horário</span></button>
+        <button class="tab" data-tab="cronos"><span class="ic">⏳</span><span class="tl">Temporizador</span></button>
+        <button class="tab" data-tab="estudo"><span class="ic">📚</span><span class="tl">Estudo</span></button>
+        <button class="tab" data-tab="prova"><span class="ic">📝</span><span class="tl">Modo prova</span></button>
+        <button class="tab" data-tab="lembretes"><span class="ic">🔔</span><span class="tl">Lembretes</span></button>
+      </nav>
+
+      <div class="pane-wrap">
+
+        <section class="pane active" data-pane="geral">
+          <h3>Geral</h3>
+          <label class="opt row"><span>Sons de aviso</span><input type="checkbox" id="soundOn"></label>
+          <label class="opt row"><span>Esconder menus após 15 s sem uso (só no computador)</span><input type="checkbox" id="autoHideUi"></label>
+          <label class="opt row">
+            <span>Ocultar botões de controle<br><small class="hint">Os botões aparecem ao tocar ou mover o mouse.</small></span>
+            <input type="checkbox" id="hideBtns">
+          </label>
+          <p class="hint">A tela não desliga enquanto o site está aberto (quando o navegador permite).</p>
+        </section>
+
+        <section class="pane" data-pane="aparencia">
+          <h3>Fundo e relógio</h3>
+          <div class="field">
+            <span>Cor do fundo</span>
+            <div id="bgSw" class="swatches" data-key="bg"></div>
+          </div>
+          <div class="field">
+            <span>Cor do relógio</span>
+            <div id="clockSw" class="swatches" data-key="clockTheme"></div>
+          </div>
+
+          <h3>Textos</h3>
+          <div class="field">
+            <span>Cor dos textos (data, fuso, painel, modos)</span>
+            <div id="textSw" class="swatches" data-key="textColor"></div>
+            <p id="textWarn" class="warn" hidden>A cor do texto não pode ser igual à do fundo.</p>
+          </div>
+
+          <h3>Destaque</h3>
+          <div class="field">
+            <span>Cor de destaque (segundos, barras de progresso, botões principais e avisos)</span>
+            <div id="ptrSw" class="swatches" data-key="pointer"></div>
+            <div class="row">
+              <input type="color" id="pointerColor" aria-label="Cor personalizada de destaque">
+              <span>Personalizada</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="pane" data-pane="relogio">
+          <h3>Exibição</h3>
+          <label class="opt row"><span>Estilo</span>
+            <select id="clockType" style="width:auto">
+              <option value="digital">Digital</option>
+              <option value="flip">Flip</option>
+              <option id="optAnalog" value="analog">Analógico</option>
+            </select>
+          </label>
+          <p class="hint">O analógico vale só para o relógio e o modo prova.</p>
+          <label class="opt row"><span>Formato</span>
+            <select id="fmt" style="width:auto">
+              <option value="24">24 horas</option>
+              <option value="12">12 horas</option>
+            </select>
+          </label>
+          <label class="opt row"><span>Mostrar data</span><input type="checkbox" id="showDate"></label>
+        </section>
+
+        <section class="pane" data-pane="fuso">
+          <h3>Fuso horário</h3>
+          <label class="opt row"><span>Mostrar fuso horário</span><input type="checkbox" id="showTz"></label>
+          <label class="opt row"><span>Detectar automaticamente</span><input type="checkbox" id="tzAuto"></label>
+          <label class="opt"><span>Fuso manual</span><select id="tzSelect"></select></label>
+        </section>
+
+        <section class="pane" data-pane="cronos">
+          <h3>Duração padrão</h3>
+          <div class="field">
+            <div class="row">
+              <label class="opt inline"><span>h</span><input type="number" id="dH" min="0" max="99"></label>
+              <label class="opt inline"><span>min</span><input type="number" id="dM" min="0" max="59"></label>
+              <label class="opt inline"><span>s</span><input type="number" id="dS" min="0" max="59"></label>
+            </div>
+          </div>
+          <h3>Exibição</h3>
+          <label class="opt row"><span>Mostrar tempo inicial</span><input type="checkbox" id="tmShowInit"></label>
+          <label class="opt row"><span>Mostrar barra de progresso</span><input type="checkbox" id="tmShowBar"></label>
+        </section>
+
+        <section class="pane" data-pane="estudo">
+          <h3>Estilos prontos</h3>
+          <div class="preset-row">
+            <button class="btn btn-sm" data-preset="pomodoro">Pomodoro 25/5</button>
+            <button class="btn btn-sm" data-preset="longo">Longo 50/10</button>
+            <button class="btn btn-sm" data-preset="curto">Curto 15/3</button>
+          </div>
+
+          <h3>Repetição</h3>
+          <label class="opt"><span>Quando parar</span>
+            <select id="stMode">
+              <option value="count">Repetir um número de vezes</option>
+              <option value="until">Repetir até um horário</option>
+              <option value="infinite">Repetir indefinidamente</option>
+            </select>
+          </label>
+          <label class="opt row" id="stRepeatRow"><span>Vezes</span><input type="number" id="stRepeat" min="1" max="50"></label>
+          <label class="opt row" id="stUntilRow"><span>Horário final</span><input type="time" id="stUntil"></label>
+
+          <h3>Base do tempo</h3>
+          <label class="opt row"><span>Usar horário como base (blocos em horários fixos)</span><input type="checkbox" id="stTimeBase"></label>
+          <label class="opt row" id="stAutoRow"><span>Iniciar o próximo bloco automaticamente</span><input type="checkbox" id="stAuto"></label>
+
+          <h3>Blocos</h3>
+          <div id="stBlocks"></div>
+          <button id="stAdd" class="btn btn-sm" style="margin-top:6px">+ Adicionar bloco</button>
+          <p class="hint" style="margin-top:8px">Cada bloco tem nome, minutos e tipo (Estudo ou Pausa). Alterar a sequência reinicia o progresso.</p>
+        </section>
+
+        <section class="pane" data-pane="prova">
+          <h3>Início e fim</h3>
+          <label class="opt"><span>Início</span><input type="datetime-local" id="examStart"></label>
+          <label class="opt"><span>Fim</span><input type="datetime-local" id="examEnd"></label>
+          <p class="hint">Os horários são interpretados no fuso selecionado.</p>
+
+          <h3>O que mostrar</h3>
+          <label class="opt row"><span>Horário de início e fim</span><input type="checkbox" id="showTimes"></label>
+          <label class="opt row"><span>Contagem regressiva</span><input type="checkbox" id="showCountdown"></label>
+
+          <h3>Avisos antes do fim</h3>
+          <label class="opt row"><span>Faltam 1 hora</span><input type="checkbox" id="alert60"></label>
+          <label class="opt row"><span>Faltam 30 minutos</span><input type="checkbox" id="alert30"></label>
+          <label class="opt row"><span>Faltam 15 minutos</span><input type="checkbox" id="alert15"></label>
+          <label class="opt row"><span>Faltam 10 minutos</span><input type="checkbox" id="alert10"></label>
+          <label class="opt row"><span>Faltam 5 minutos</span><input type="checkbox" id="alert5"></label>
+          <label class="opt row"><span>Falta 1 minuto</span><input type="checkbox" id="alert1"></label>
+          <p class="hint">Os avisos aparecem no topo e somem após 1 minuto.</p>
+        </section>
+
+        <section class="pane" data-pane="lembretes">
+          <h3>Notificações</h3>
+          <label class="opt row"><span>Notificação do navegador</span>
+            <button id="notifBtn" class="btn btn-sm">Permitir</button>
+          </label>
+          <p class="hint">Os lembretes aparecem no site e tocam um som. A notificação do sistema só aparece com a aba aberta.</p>
+        </section>
+
       </div>
-    </div>
-
-    <h3>Relógio</h3>
-    <label>Tipo de relógio
-      <select id="clockType">
-        <option value="digital">Digital</option>
-        <option value="flip">Flip</option>
-        <option value="analog">Analógico</option>
-      </select>
-    </label>
-    <label>Formato
-      <select id="fmt">
-        <option value="24">24 horas</option>
-        <option value="12">12 horas</option>
-      </select>
-    </label>
-    <label class="check">
-      <input type="checkbox" id="showDate"> Mostrar data
-    </label>
-
-    <h3>Fuso horário</h3>
-    <label class="check">
-      <input type="checkbox" id="showTz"> Mostrar fuso horário
-    </label>
-    <label class="check">
-      <input type="checkbox" id="tzAuto"> Detectar fuso automaticamente
-    </label>
-    <label>Fuso manual
-      <select id="tzSelect"></select>
-    </label>
-
-    <h3>Modo prova</h3>
-    <label class="check">
-      <input type="checkbox" id="examOn"> Ativar modo prova
-    </label>
-    <div id="examOpts" hidden>
-      <label>Início
-        <input type="datetime-local" id="examStart">
-      </label>
-      <label>Fim
-        <input type="datetime-local" id="examEnd">
-      </label>
-      <label class="check">
-        <input type="checkbox" id="showTimes"> Mostrar início e fim abaixo do relógio
-      </label>
-      <label class="check">
-        <input type="checkbox" id="showCountdown"> Mostrar contagem regressiva
-      </label>
-
-      <h4>Avisos antes do fim</h4>
-      <label class="check"><input type="checkbox" id="alert60"> Faltam 1 hora</label>
-      <label class="check"><input type="checkbox" id="alert30"> Faltam 30 minutos</label>
-      <label class="check"><input type="checkbox" id="alert15"> Faltam 15 minutos</label>
-      <label class="check"><input type="checkbox" id="alert10"> Faltam 10 minutos</label>
-      <label class="check"><input type="checkbox" id="alert5"> Faltam 5 minutos</label>
-      <label class="check"><input type="checkbox" id="alert1"> Falta 1 minuto</label>
-      <p class="hint">Os avisos aparecem acima do cronômetro e somem após 1 minuto.</p>
-
-      <p class="hint">Os horários são interpretados no fuso selecionado.</p>
     </div>
   </aside>
 
-  <script src="script.js"></script>
+  <!-- Módulos, nesta ordem (funcionam abrindo o arquivo direto, sem servidor) -->
+  <script src="js/config.js"></script>
+  <script src="js/time.js"></script>
+  <script src="js/display.js"></script>
+  <script src="js/modes.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/app.js"></script>
 </body>
 </html>

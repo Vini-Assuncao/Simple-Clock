@@ -1,53 +1,78 @@
-# Relógio
+# SimpleClock
 
-Um relógio online para mostrar o horário atual, com vários estilos, fuso horário e um modo prova com contagem regressiva e avisos. Funciona em celular e computador, sem servidor e sem instalação.
+Um site limpo para tudo que envolve tempo: relógio, cronômetro, temporizador, modo estudo com pausas, lembretes e modo prova. Funciona no celular e no computador, sem servidor e sem instalação.
 
-## Funcionalidades
+## Modos
 
-- **Três estilos de relógio:** digital, flip (com animação de virada) e analógico.
-- **Fuso horário:** detecção automática pelo navegador ou escolha manual entre todos os fusos disponíveis. Pode ser mostrado ou ocultado.
-- **Data:** pode ser mostrada ou ocultada.
-- **Formato:** 24 horas ou 12 horas (com AM/PM).
-- **Cores personalizáveis:**
-  - Cor do fundo: preto, cinza escuro, cinza claro ou branco.
-  - Cor do relógio: a cor escolhida fica no fundo do relógio analógico e dos cartões do flip, e no texto do digital. Números, traços e dígitos recebem contraste automático.
-  - Cor dos textos: afeta a data, o fuso, o modo prova e o painel de configurações.
-  - Cor do ponteiro: vermelho por padrão, com opções prontas ou cor personalizada.
-- **Tela cheia:** botão no canto superior. Em tela cheia, a engrenagem some e o botão de sair fica discreto.
-- **Modo prova:**
-  - Defina horário de início e de fim (no fuso selecionado).
-  - Mostre ou oculte os horários abaixo do relógio.
-  - Mostre ou oculte a contagem regressiva. Ela mostra o tempo até o início, depois o tempo até o fim com barra de progresso, e por fim "Prova encerrada".
-  - **Avisos:** escolha quais avisos quer receber (faltam 1 hora, 30 min, 15 min, 10 min, 5 min e 1 min). O aviso aparece acima do cronômetro e some após 1 minuto.
+Os modos ficam na barra inferior. Ao sair, o site reabre no último modo usado.
 
-As configurações são salvas no navegador de quem usa (localStorage), então continuam após recarregar a página.
+| Modo | O que faz |
+| --- | --- |
+| 🕐 **Horário** | Horário atual nos estilos digital, flip ou analógico. Pode mostrar data e fuso. |
+| ⏱ **Cronômetro** | Inicia, pausa, zera e registra voltas (parcial e total). Estilo digital ou flip. |
+| ⏳ **Temporizador** | Define horas, minutos e segundos. Inicia, pausa e reinicia. Pode mostrar o tempo inicial e uma barra de progresso (ambos ativáveis em Configurações). Ao acabar, toca um som e mostra um aviso. |
+| 📚 **Estudo** | Sequência de blocos de estudo e pausas. Pode repetir um número de vezes, repetir até um horário final ou repetir indefinidamente. Há a opção de usar o horário como base: cada bloco aparece com o horário em que começa (ex.: `19:02 Foco · 15 min (Estudo)`). Estilos prontos: Pomodoro 25/5, Longo 50/10 e Curto 15/3. |
+| 🔔 **Lembretes** | Lembretes com horário e texto, de uma vez ou todo dia. Na hora marcada aparece um aviso, toca um som e, se permitido, chega uma notificação do navegador. |
+| 📝 **Prova** | Mostra o horário de início e fim, a contagem regressiva e a barra de progresso. Envia avisos antes do fim (1 hora, 30, 15, 10, 5 e 1 minuto). |
+
+Para esconder a barra de modos, use o botão ✕ no final dela. Um botão ☰ no canto inferior direito a mostra de novo. Em tela cheia, a barra fica oculta.
+
+O analógico existe apenas no relógio. Cronômetro, temporizador, estudo e prova usam os estilos digital ou flip.
+
+## Configurações
+
+O botão ⚙ abre o painel. Ele mostra só as abas que fazem sentido no modo atual:
+
+- **Sempre:** Geral, Aparência e Relógio.
+- **Relógio:** também Fuso horário.
+- **Temporizador:** também a duração padrão.
+- **Estudo:** também a sequência de blocos.
+- **Lembretes:** também notificações.
+- **Prova:** também fuso horário e configurações da prova.
+
+Em **Aparência** você escolhe a cor do fundo, do relógio, dos textos e a **cor de destaque**, usada no ponteiro dos segundos, nas barras de progresso, nos botões principais e nos avisos. A cor do texto não pode ser igual à do fundo. Se você tentar, aparece um aviso. Se mudar o fundo para a cor do texto, o texto muda para o contraste.
+
+Os cartões do flip têm um tom levemente diferente da cor do relógio e uma borda sutil, então continuam visíveis mesmo com fundo e relógio na mesma cor.
+
+## Tela sempre ligada
+
+O site pede ao navegador para manter a tela acesa enquanto está aberto. Isso usa a API Screen Wake Lock, suportada no Chrome, Edge, Safari do iOS 16.4 ou mais novo e na maioria dos navegadores modernos. Se o navegador não permitir, a tela pode apagar normalmente.
 
 ## Estrutura dos arquivos
 
 ```
 .
-├── index.html   # estrutura da página
-├── style.css    # estilos e variáveis de cor
-├── script.js    # lógica: fuso, relógios, cores, modo prova e avisos
-└── README.md    # este arquivo
+├── index.html        # estrutura da página, barra de modos e painel de configurações
+├── style.css         # estilos, variáveis de cor e barra de rolagem
+├── js/
+│   ├── config.js     # constantes, paletas, valores padrão e configurações salvas
+│   ├── time.js       # fuso horário e formatação de horários
+│   ├── display.js    # relógios digital, flip e analógico, avisos e sons
+│   ├── modes.js      # lógica de cada modo e loop principal
+│   ├── settings.js   # tema, painel de configurações e sincronização
+│   └── app.js        # eventos, troca de modos, tela cheia, tela ligada e início
+└── README.md
 ```
 
-Não há dependências externas, nem frameworks, nem etapa de build.
+Os arquivos são carregados em ordem pelo `index.html`, sem módulos ES, então o site funciona até abrindo o `index.html` direto no computador. Não há dependências externas (exceto a fonte Outfit), frameworks nem etapa de build.
 
 ## Como publicar no GitHub Pages
 
 1. Crie um repositório no GitHub (por exemplo, `relogio`).
-2. Envie para a raiz do repositório os arquivos `index.html`, `style.css` e `script.js` (o `README.md` é opcional).
-3. No repositório, vá em **Settings → Pages**.
-4. Em **Build and deployment**, escolha **Deploy from a branch**, selecione a branch `main` e a pasta `/ (root)`, e clique em **Save**.
-5. Depois de alguns minutos, o site estará disponível em `https://SEU-USUARIO.github.io/relogio/`.
+2. Envie para a raiz do repositório o `index.html`, o `style.css` e a pasta `js/` (com os quatro arquivos dentro). O `README.md` é opcional.
+3. Vá em **Settings → Pages**.
+4. Em **Build and deployment**, escolha **Deploy from a branch**, selecione a branch `main` e a pasta `/ (root)` e clique em **Save**.
+5. Depois de alguns minutos, o site estará em `https://SEU-USUARIO.github.io/relogio/`.
 
-## Como executar localmente
+## Como usar localmente
 
-Basta abrir o arquivo `index.html` em qualquer navegador moderno. Não é necessário servidor.
+Abra o `index.html` em um navegador moderno. Não é preciso servidor.
 
 ## Observações
 
-- **Tela cheia no iPhone:** o Safari do iOS não permite tela cheia em páginas web, então o botão fica oculto nesse caso. Para uma experiência parecida, use "Adicionar à Tela de Início".
-- **Avisos do modo prova:** os avisos dependem da aba estar aberta. Se o navegador suspender a página em segundo plano, o aviso pode aparecer assim que a aba voltar a ficar ativa.
-- **Fuso:** os horários de início e fim do modo prova são interpretados no fuso selecionado, e não no fuso do computador.
+- **Menus com inatividade:** no computador, a barra de modos e os botões de tela cheia e configurações somem após 15 segundos sem uso (o botão ✕ de sair da tela cheia continua visível). No celular, os menus não somem.
+
+- **Tela cheia no iPhone:** o Safari do iOS não permite tela cheia em páginas web, então o botão fica oculto. Para uma experiência parecida, use "Adicionar à Tela de Início".
+- **Sons e avisos:** os sons dependem de um toque na página, exigência dos navegadores. Os avisos só disparam com a aba aberta.
+- **Dados salvos:** configurações, lembretes e a última posição do menu ficam no navegador de quem usa. Cronômetro, temporizador, estudo e voltas são reiniciados ao recarregar a página.
+- **Fuso no modo prova:** os horários são interpretados no fuso selecionado, e não no fuso do computador.
